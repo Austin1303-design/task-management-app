@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taskflow — interactive task management application</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <style>
+    :root {
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f4f5f7;
+      --color-background-tertiary: #fafbfc;
+      --color-border-primary: #e1e4e8;
+      --color-border-secondary: #ebedf0;
+      --color-border-tertiary: #f0f2f5;
+      --color-text-primary: #1f2328;
+      --color-text-secondary: #57606a;
+      --color-text-tertiary: #8c959f;
+      --border-radius-md: 6px;
+      --border-radius-lg: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Taskflow — interactive task management application</h2>
+
+  <div class="app-shell" id="app" style="position:relative">
+
+    <!-- AUTH -->
+    <div class="auth-wrap" id="auth">
+      <div class="auth-box">
+        <div class="brand">
+          <div class="brand-dot"><i class="ti ti-layout-kanban" aria-hidden="true"></i></div>
+          <span class="brand-name">Taskflow</span>
+        </div>
+        <h2 id="a-title">Sign in</h2>
+        <p id="a-sub">Pick up where you left off.</p>
+        <div class="hint-box"><strong>Demo:</strong> &nbsp;<code>demo@taskflow.app</code>&nbsp; / &nbsp;<code>demo123</code></div>
+        <div class="fld" id="name-row" style="display:none"><label>Full name</label><input id="a-name" placeholder="Your name"></div>
+        <div class="fld"><label>Email</label><input id="a-email" value="demo@taskflow.app" type="email"></div>
+        <div class="fld"><label>Password</label><input id="a-pass" value="demo123" type="password"></div>
+        <button class="btn-main" onclick="doAuth()">Sign in</button>
+        <div class="toggle-auth" id="a-switch">No account? <a onclick="swapAuth()">Create one</a></div>
+      </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div class="layout" id="main" style="display:none">
+      <div class="sidebar">
+        <div class="sb-logo">
+          <div class="sb-dot"><i class="ti ti-layout-kanban" aria-hidden="true"></i></div>
+          <span>Taskflow</span>
+        </div>
+        <div class="sb-nav">
+          <div class="sb-section">Workspace</div>
+          <div class="sb-item on" onclick="go('dash',this)"><i class="ti ti-dashboard" aria-hidden="true"></i>Dashboard</div>
+          <div class="sb-item" onclick="go('all',this)"><i class="ti ti-list" aria-hidden="true"></i>All tasks<span class="sb-badge" id="nb">0</span></div>
+          <div class="sb-item" onclick="go('board',this)"><i class="ti ti-layout-kanban" aria-hidden="true"></i>Board</div>
+          <div class="sb-section">Filters</div>
+          <div class="sb-item" onclick="go('today',this)"><i class="ti ti-calendar-event" aria-hidden="true"></i>Due today</div>
+          <div class="sb-item" onclick="go('high',this)"><i class="ti ti-alert-circle" aria-hidden="true"></i>High priority</div>
+          <div class="sb-item" onclick="go('overdue',this)"><i class="ti ti-clock-exclamation" aria-hidden="true"></i>Overdue</div>
+        </div>
+        <div class="sb-foot">
+          <div class="u-pill" onclick="logout()">
+            <div class="u-av" id="uav">D</div>
+            <span class="u-name" id="uname">Demo User</span>
+            <i class="ti ti-logout" aria-hidden="true" style="font-size:14px;color:var(--color-text-tertiary)"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="topbar">
+          <span class="tb-title" id="pg-title">Dashboard</span>
+          <div class="search-box">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input placeholder="Search…" oninput="qSearch(this.value)" id="sq">
+          </div>
+          <button class="tb-btn accent" onclick="openM()"><i class="ti ti-plus" aria-hidden="true"></i> New task</button>
+        </div>
+        <div class="rt-strip"><div class="rt-dot"></div>Live sync active</div>
+        <div class="page" id="pg"></div>
+      </div>
+    </div>
+
+    <!-- MODAL -->
+    <div id="modal-wrap" style="display:none">
+      <div class="modal-layer" onclick="backdropClose(event)">
+        <div class="modal">
+          <div class="mhd">
+            <h3 id="m-title">New task</h3>
+            <button class="ib" onclick="closeM()" aria-label="Close"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="mbody">
+            <div class="field"><label>Title *</label><input id="f-t" placeholder="What needs to be done?"></div>
+            <div class="field"><label>Description</label><textarea id="f-d" placeholder="Notes, context, links…"></textarea></div>
+            <div class="frow">
+              <div class="field"><label>Priority</label>
+                <select id="f-p"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select>
+              </div>
+              <div class="field"><label>Status</label>
+                <select id="f-s"><option value="todo">To do</option><option value="inprogress">In progress</option><option value="done">Done</option><option value="blocked">Blocked</option></select>
+              </div>
+            </div>
+            <div class="frow">
+              <div class="field"><label>Due date</label><input id="f-du" type="date"></div>
+              <div class="field"><label>Tag</label><input id="f-tg" placeholder="design, dev…"></div>
+            </div>
+            <div class="field"><label>Assigned to</label><input id="f-as" placeholder="Name or email"></div>
+          </div>
+          <div class="mfoot" id="m-foot">
+            <button class="btn-sec" onclick="closeM()">Cancel</button>
+            <div class="sp"></div>
+            <button class="btn-pur" onclick="saveT()">Create task</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOASTS -->
+    <div class="toasts" id="toasts"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
